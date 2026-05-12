@@ -209,19 +209,15 @@ class MultimodalSportsDataset(Dataset):
         print(f"✅ Dataset multimodal prêt : {len(self)} samples")
 
     def __len__(self):
-        return len(self.df) - self.sequence_length
+        return len(self.df) # On retire le "- self.sequence_length"
 
     def __getitem__(self, idx):
-        # Séquence de 5 matchs passés → shape [5, 2]
-        stats_seq = torch.tensor(
-            self.features[idx : idx + self.sequence_length],
-            dtype=torch.float32
-        )
-        # Vecteur NLP du match cible → shape [768]
-        nlp_vec = self.nlp_vectors[idx + self.sequence_length]
-
-        # Label du match cible
-        label = torch.tensor(self.labels[idx + self.sequence_length], dtype=torch.long)
+        # On prend UNIQUEMENT la ligne du match ciblé (qui contient déjà la "form" historique)
+        # On ajoute une dimension [1, 8] pour satisfaire le LSTM
+        stats_seq = torch.tensor(self.features[idx], dtype=torch.float32).unsqueeze(0)
+        
+        nlp_vec = self.nlp_vectors[idx]
+        label = torch.tensor(self.labels[idx], dtype=torch.long)
 
         return stats_seq, nlp_vec, label
 
@@ -285,15 +281,13 @@ class MultimodalSportsDatasetFromDF(Dataset):
             self.nlp_vectors.append(vec)
 
     def __len__(self):
-        return len(self.labels) - self.sequence_length
+        return len(self.labels) # On retire le "- self.sequence_length"
 
     def __getitem__(self, idx):
-        stats_seq = torch.tensor(
-            self.features[idx: idx + self.sequence_length],
-            dtype=torch.float32
-        )
-        nlp_vec = self.nlp_vectors[idx + self.sequence_length]
-        label   = torch.tensor(self.labels[idx + self.sequence_length], dtype=torch.long)
+        stats_seq = torch.tensor(self.features[idx], dtype=torch.float32).unsqueeze(0)
+        nlp_vec = self.nlp_vectors[idx]
+        label = torch.tensor(self.labels[idx], dtype=torch.long)
+        
         return stats_seq, nlp_vec, label
 
 
