@@ -1,0 +1,10 @@
+pandas
+numpy
+requests
+python-dotenv
+torch
+transformers
+scikit-learn
+matplotlib
+beautifulsoup4
+lxml
