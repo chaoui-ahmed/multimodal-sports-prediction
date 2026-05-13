@@ -19,6 +19,24 @@ from fusion_dataloader import MultimodalSportsDataset, STAT_FEATURES
 # Taille de l'entrée stats (synchronisé automatiquement avec generate_demo_stats)
 STATS_INPUT_SIZE = len(STAT_FEATURES)   # 8 (form, goals_scored, goals_conceded, elo) x 2
 
+import torch.nn.functional as F
+
+class FocalLoss(nn.Module):
+    def __init__(self, weight=None, gamma=2.0, reduction='mean'):
+        super(FocalLoss, self).__init__()
+        self.weight = weight # Poids de classes [Win, Draw, Loss]
+        self.gamma = gamma
+        self.reduction = reduction
+
+    def forward(self, inputs, targets):
+        ce_loss = F.cross_entropy(inputs, targets, weight=self.weight, reduction='none')
+        pt = torch.exp(-ce_loss)
+        focal_loss = ((1 - pt) ** self.gamma) * ce_loss
+        
+        if self.reduction == 'mean':
+            return focal_loss.mean()
+        return focal_loss.sum()
+
 
 # ══════════════════════════════════════════════════════════════════
 # 1. ARCHITECTURE DU MODELE
@@ -148,7 +166,7 @@ def train(csv_train="data/processed/train_stats.csv",
 
     # Poids de classes (corrige le biais vers 'Win')
     class_weights = compute_class_weights(train_dataset).to(device)
-    criterion     = nn.CrossEntropyLoss(weight=class_weights, label_smoothing=0.1)
+    criterion = FocalLoss(weight=class_weights, gamma=2.0)
     optimizer     = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-4)
     scheduler     = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs, eta_min=1e-6)
 
@@ -312,7 +330,7 @@ def cross_validate(df,
         # Modèle frais pour chaque fold
         model     = MultimodalSportsModel().to(device)
         cw        = compute_class_weights(train_ds).to(device)
-        criterion = nn.CrossEntropyLoss(weight=cw, label_smoothing=0.1)
+        criterion = FocalLoss(weight=class_weights, gamma=2.0)
         optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-4)
         scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs, eta_min=1e-6)
 
@@ -406,7 +424,7 @@ def cross_validate(df,
 
     model     = MultimodalSportsModel().to(device)
     cw        = compute_class_weights(full_ds).to(device)
-    criterion = nn.CrossEntropyLoss(weight=cw, label_smoothing=0.1)
+    criterion = FocalLoss(weight=class_weights, gamma=2.0)
     optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-4)
 
     print(f"  {'Ep':>3} | {'Loss':>7} | {'Acc':>6}")
@@ -441,16 +459,6 @@ def cross_validate(df,
 # ══════════════════════════════════════════════════════════════════
 
 def predict_match(model, stats_seq_np, nlp_vec_tensor, device='cpu'):
-    """
-    Prédit le résultat d'un match.
-
-    Args:
-        model          : MultimodalSportsModel chargé
-        stats_seq_np   : numpy array [5, 2] — 5 derniers matchs de l'équipe
-        nlp_vec_tensor : Tensor [768]        — vecteur NLP du contexte du match
-    Returns:
-        dict avec probabilités et prédiction
-    """
     model.eval()
     with torch.no_grad():
         stats = torch.tensor(stats_seq_np, dtype=torch.float32).unsqueeze(0).to(device)
@@ -459,7 +467,24 @@ def predict_match(model, stats_seq_np, nlp_vec_tensor, device='cpu'):
         probs  = torch.softmax(logits, dim=1)[0]
 
     labels = ["Win (domicile)", "Draw", "Loss (domicile)"]
-    pred_idx = probs.argmax().item()
+    
+    # Probabilités brutes
+    p_win, p_draw, p_loss = probs[0].item(), probs[1].item(), probs[2].item()
+    
+    # Threshold Moving : Seuils asymétriques basés sur la fréquence naturelle
+    # On abaisse l'exigence pour prédire un Nul ou une Défaite
+    pred_idx = 0 # Défaut: Win
+    
+    if p_draw >= 0.28:  # Si le Nul dépasse 28% (au lieu de 33.3%), on le tente
+        pred_idx = 1
+    elif p_loss >= 0.35: # Si la Défaite dépasse 35%, on la tente
+        pred_idx = 2
+    else:
+        pred_idx = 0 # Sinon, Victoire à domicile
+
+    # Optionnel : si le modèle est VRAIMENT confiant sur Win, on override
+    if p_win > 0.55:
+        pred_idx = 0
 
     return {
         "prediction": labels[pred_idx],
