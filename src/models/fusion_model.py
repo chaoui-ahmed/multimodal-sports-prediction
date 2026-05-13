@@ -43,28 +43,6 @@ class FocalLoss(nn.Module):
             
         if self.reduction == 'mean':
             return focal_loss.mean()
-        return focal_loss.sum()class FocalLoss(nn.Module):
-    def __init__(self, weight=None, gamma=2.0, reduction='mean'):
-        super(FocalLoss, self).__init__()
-        self.weight = weight
-        self.gamma = gamma
-        self.reduction = reduction
-
-    def forward(self, inputs, targets):
-        # 1. Calculer la loss standard SANS les poids pour extraire la vraie probabilité (pt)
-        ce_loss_unweighted = F.cross_entropy(inputs, targets, reduction='none')
-        pt = torch.exp(-ce_loss_unweighted)
-        
-        # 2. Appliquer le mécanisme focal
-        focal_loss = ((1 - pt) ** self.gamma) * ce_loss_unweighted
-        
-        # 3. Appliquer les poids de classes a posteriori
-        if self.weight is not None:
-            w = self.weight[targets]
-            focal_loss = focal_loss * w
-            
-        if self.reduction == 'mean':
-            return focal_loss.mean()
         return focal_loss.sum()
 
 
