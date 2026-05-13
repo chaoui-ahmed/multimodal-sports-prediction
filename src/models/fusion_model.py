@@ -479,20 +479,19 @@ def predict_match(model, stats_seq_np, nlp_vec_tensor, device='cpu'):
     # Probabilités brutes
     p_win, p_draw, p_loss = probs[0].item(), probs[1].item(), probs[2].item()
     
-    # Threshold Moving : Seuils asymétriques basés sur la fréquence naturelle
-    # On abaisse l'exigence pour prédire un Nul ou une Défaite
-    pred_idx = 0 # Défaut: Win
-    
-    if p_draw >= 0.28:  # Si le Nul dépasse 28% (au lieu de 33.3%), on le tente
+    # Threshold Moving Optimisé
+    if p_win >= 0.45:
+        # Si l'équipe à domicile est forte, on valide la victoire
+        pred_idx = 0 
+    elif p_loss >= 0.38 and p_loss > p_draw:
+        # Si l'équipe à l'extérieur est très menaçante (ex: Man City)
+        pred_idx = 2 
+    elif p_draw >= 0.32:
+        # Si aucune équipe ne domine vraiment (probabilités tassées)
         pred_idx = 1
-    elif p_loss >= 0.35: # Si la Défaite dépasse 35%, on la tente
-        pred_idx = 2
     else:
-        pred_idx = 0 # Sinon, Victoire à domicile
-
-    # Optionnel : si le modèle est VRAIMENT confiant sur Win, on override
-    if p_win > 0.55:
-        pred_idx = 0
+        # Sécurité : on prend la probabilité brute la plus haute
+        pred_idx = torch.argmax(probs).item()
 
     return {
         "prediction": labels[pred_idx],
