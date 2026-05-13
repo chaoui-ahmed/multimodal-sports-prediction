@@ -330,7 +330,7 @@ def cross_validate(df,
         # Modèle frais pour chaque fold
         model     = MultimodalSportsModel().to(device)
         cw        = compute_class_weights(train_ds).to(device)
-        criterion = FocalLoss(weight=class_weights, gamma=2.0)
+        criterion = FocalLoss(weight=cw, gamma=2.0)
         optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-4)
         scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs, eta_min=1e-6)
 
@@ -423,8 +423,8 @@ def cross_validate(df,
     full_loader = DataLoader(full_ds, batch_size=batch_size, shuffle=True, drop_last=True)
 
     model     = MultimodalSportsModel().to(device)
-    cw        = compute_class_weights(full_ds).to(device)
-    criterion = FocalLoss(weight=class_weights, gamma=2.0)
+    cw        = compute_class_weights(train_ds).to(device)
+    criterion = FocalLoss(weight=cw, gamma=2.0)
     optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-4)
 
     print(f"  {'Ep':>3} | {'Loss':>7} | {'Acc':>6}")

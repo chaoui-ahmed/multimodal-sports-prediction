@@ -36,7 +36,7 @@ def calculate_rolling_form(df):
         points = team_matches.apply(lambda r: r['home_pts'] if r['home_team'] == team else r['away_pts'], axis=1)
         
         # Forme = moyenne des 5 matchs PRÉCÉDENTS (shift(1) pour ne pas tricher avec le futur)
-        rolling_form = points.shift(1).rolling(window=5, min_periods=1).mean()
+        rolling_form = points.shift(1).ewm(span=5, adjust=False).mean()
         
         # On réinjecte dans le DF principal
         df.loc[df['home_team'] == team, 'home_form'] = rolling_form

@@ -128,7 +128,7 @@ def calculate_rolling_form(df, window=5):
         # Rolling sur les 5 matchs PRÉCÉDENTS (shift(1) pour éviter la fuite)
         roll_form      = team_df['_pts'].shift(1).ewm(span=window, adjust=False).mean()
         roll_scored    = team_df['_scored'].shift(1).ewm(span=window, adjust=False).mean()
-        roll_conceded  = team_df['_conceded'].shift(1).rolling(window, min_periods=1).mean()
+        roll_conceded  = team_df['_conceded'].shift(1).ewm(span=window, adjust=False).mean()
 
         # Mapping par index de ligne (corrige le bug d'indexation)
         for df_idx, val_form, val_scored, val_conc in zip(
