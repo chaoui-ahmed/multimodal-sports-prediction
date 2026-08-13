@@ -174,5 +174,69 @@
       }
     },
     "conclusion": "Small positive CLV in Serie B does not survive as profit at any price tier. Selections skew to longshots, where post-opening price drift produces CLV mechanically while favourite-longshot bias keeps expected return negative."
+  },
+  "model_v2_market_efficiency": {
+    "description": "Scaled-up model: 14 European leagues, 37,514 matches, shot-based venue-split rolling features, and the de-vigged opening price supplied as an input feature. If a model given the market's own probabilities cannot beat them, the remaining features carry no unpriced information.",
+    "train_matches": 26674,
+    "validation_matches": 5411,
+    "test_matches": 5429,
+    "leagues": 14,
+    "match_result_1x2": {
+      "validation": {
+        "model_log_loss": 0.9942,
+        "market_log_loss": 0.9923,
+        "diff": 0.0018
+      },
+      "test": {
+        "model_log_loss": 1.0016,
+        "market_log_loss": 1.0006,
+        "diff": 0.001
+      },
+      "note": "Gap to market narrowed from +0.0296 (baseline) to +0.0010, i.e. parity, but never negative."
+    },
+    "over_under_2_5_goals": {
+      "test": {
+        "model_log_loss": 0.6756,
+        "market_log_loss": 0.6756,
+        "diff": -4e-05
+      },
+      "overround_pct": 5.32,
+      "yield_at_ev_ge_0_pct": -0.75,
+      "note": "Totals market equally efficient. Yield damage far smaller than 1X2 (-0.75% vs -24.8%) because near-even-money prices remove the longshot amplification effect."
+    },
+    "why_value_betting_loses": {
+      "overround_pct": 6.3,
+      "yield_random_selection_pct": -7.53,
+      "yield_model_max_probability_pct": -5.7,
+      "yield_model_max_ev_pct": -4.34,
+      "by_odds_bucket_ev_claimed_vs_actual": {
+        "1-2": {
+          "n": 728,
+          "ev_claimed_pct": -2.6,
+          "actual_yield_pct": -6.0
+        },
+        "2-3": {
+          "n": 1032,
+          "ev_claimed_pct": -1.4,
+          "actual_yield_pct": -5.3
+        },
+        "3-5": {
+          "n": 2877,
+          "ev_claimed_pct": 0.2,
+          "actual_yield_pct": -0.1
+        },
+        "5-10": {
+          "n": 605,
+          "ev_claimed_pct": 5.5,
+          "actual_yield_pct": -12.5
+        },
+        "10-100": {
+          "n": 187,
+          "ev_claimed_pct": 28.6,
+          "actual_yield_pct": -32.1
+        }
+      },
+      "mechanism": "Edge = p*odds - 1, so a fixed absolute probability error scales with the odds. A 3-point overestimate implies +20% edge at odds 15 but +2% at odds 1.5. Selecting on maximum edge therefore selects wherever the model's estimates are most inflated, and Kelly then sizes those bets largest."
+    }
   }
 }

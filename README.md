@@ -89,6 +89,59 @@ Being close to the closing line on log-loss is a respectable result for a model 
 from public match statistics and news text. Being close is not the same as being ahead,
 and only being ahead is profitable.
 
+### Scaled-up model and market efficiency
+
+The baseline above trains on one league. `src/models/model_v2.py` scales it to **14 European
+leagues and 37,514 matches**, replaces goals-only features with shot-based venue-split rolling
+windows (shots, shots on target, corners, rest days), and — critically — supplies the de-vigged
+opening price as an input feature.
+
+That last choice makes the test decisive: a model handed the market's own probabilities starts
+from everything the price knows, so any improvement must be information the market lacks.
+
+| Market | Split | Model log-loss | Market log-loss | Difference |
+|---|---|---|---|---|
+| 1X2 | validation 2023/24 | 0.9942 | 0.9923 | +0.0018 |
+| 1X2 | test 2024/25 | 1.0016 | 1.0006 | +0.0010 |
+| Over/Under 2.5 | test 2024/25 | 0.6756 | 0.6756 | −0.00004 |
+
+The gap to the closing line narrowed from **+0.0296** in the baseline to **+0.0010** — parity —
+but never turned negative. Given the price plus 22 additional features and 26,674 training
+matches, the model converges to reproducing the market and loses a little to estimation error.
+The Over/Under market behaves identically.
+
+**Conclusion: the feature set carries no information not already in the price.**
+
+### Why value betting loses
+
+Decomposed on the 5,429-match test set (flat stakes, overround 6.30%):
+
+| Strategy | Yield per bet | Hit rate |
+|---|---|---|
+| Random selection | −7.53% | 33.3% |
+| Model, highest probability | −5.70% | 50.3% |
+| Model, highest EV | −4.34% | 31.8% |
+
+The model beats random by ~1.8 points, so it has genuine skill — just not the 6.3 points needed
+to clear the overround. The larger problem is *which* bets the EV rule selects:
+
+| Odds bucket | n | EV claimed | Actual yield | Hit rate |
+|---|---|---|---|---|
+| 1–2 | 728 | −2.6% | −6.0% | 54.4% |
+| 2–3 | 1,032 | −1.4% | −5.3% | 39.6% |
+| 3–5 | 2,877 | +0.2% | −0.1% | 28.6% |
+| 5–10 | 605 | +5.5% | −12.5% | 14.2% |
+| 10–100 | 187 | **+28.6%** | **−32.1%** | 4.8% |
+
+Because edge is `p·odds − 1`, a fixed absolute error in `p` scales with the odds: a 3-point
+overestimate implies a +20% edge at odds 15 but only +2% at odds 1.5. Selecting on maximum edge
+therefore selects wherever the model's estimates are most inflated, and Kelly sizes exactly those
+bets largest. This is why tightening `min_edge` makes yield *worse* (−24.8% → −41.9%) and why
+ROI degrades far faster than yield as the Kelly fraction rises.
+
+Notably the Over/Under market yields −0.75% at the same EV≥0 rule versus −24.8% for 1X2: prices
+near even money leave no room for the amplification effect.
+
 ## Demo mode
 
 `python src/main.py` runs the full pipeline end-to-end on synthetic data with no
@@ -156,6 +209,8 @@ src/
     train_model.py             tabular + embedding features, model comparison, exports predictions
     backtesting.py             value-bet detection, fractional Kelly, ROI/yield/drawdown metrics
     evaluate_strategy.py       model vs. de-vigged market + staking grid -> results/
+    model_v2.py                14-league scaled model, shot features, market-anchored
+    closing_line_value.py      CLV test with random-selection control
   nlp/
     nlp_train.py               generates data/historical_embeddings.pt
     roberta_model.py           embedding utilities
