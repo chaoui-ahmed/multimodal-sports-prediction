@@ -128,12 +128,24 @@ def run_pipeline(use_demo_data=True):
     recent_emb     = "data/news_embeddings.pt"
     historical_emb = "data/historical_embeddings.pt"
 
+    found_any = False
     for emb_path in [recent_emb, historical_emb]:
         if os.path.exists(emb_path):
             d = torch.load(emb_path, weights_only=False)
             print(f"  ✅ {emb_path} → {d['embeddings'].shape[0]} articles")
+            found_any = True
         else:
             print(f"  ⚠️  {emb_path} introuvable")
+
+    if not found_any:
+        print(
+            "\n  ⚠️  AUCUN embedding NLP trouvé.\n"
+            "      Le modèle va tourner avec des vecteurs NLP entièrement nuls :\n"
+            "      la branche 'multimodale' n'apporte alors RIEN et le modèle est\n"
+            "      équivalent à une baseline stats-only. Ne présentez pas les\n"
+            "      résultats de ce run comme multimodaux.\n"
+            "      Pour générer les embeddings :  python src/nlp/nlp_train.py\n"
+        )
 
     all_dates, embedding_matrix = load_nlp_embeddings(recent_emb, historical_emb)
 
@@ -195,7 +207,7 @@ def run_pipeline(use_demo_data=True):
     from fusion_model import predict_match
     import numpy as np
 
-    demo_stats = np.random.rand(5, 2).astype(np.float32)
+    demo_stats = np.random.rand(5, STATS_INPUT_SIZE).astype(np.float32)
     demo_nlp   = torch.zeros(768)
     result     = predict_match(trained_model, demo_stats, demo_nlp)
 

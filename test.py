@@ -8,6 +8,10 @@ Usage :
 """
 
 import sys, os, argparse
+
+from dotenv import load_dotenv
+
+load_dotenv()
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(ROOT_DIR, "src", "stats"))
 sys.path.insert(0, os.path.join(ROOT_DIR, "src", "models"))
@@ -23,7 +27,10 @@ def test_api():
     print("\n🔌 TEST 1 : Connexion API football-data.org")
     print("─" * 45)
     import requests
-    API_KEY = "5fdadf02cbbb4060a089cee644997086"
+    API_KEY = os.getenv("FOOTBALL_DATA_API_KEY")
+    if not API_KEY:
+        print("  ⏭️  FOOTBALL_DATA_API_KEY not set — skipping (see .env.example)")
+        return None
     r = requests.get(
         "https://api.football-data.org/v4/competitions/PL/matches",
         headers={"X-Auth-Token": API_KEY}

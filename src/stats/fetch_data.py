@@ -4,7 +4,12 @@ import pandas as pd
 from dotenv import load_dotenv
 
 load_dotenv()
-API_KEY = os.getenv("FOOTBALL_DATA_API_KEY", "5fdadf02cbbb4060a089cee644997086")
+API_KEY = os.getenv("FOOTBALL_DATA_API_KEY")
+if not API_KEY:
+    raise SystemExit(
+        "FOOTBALL_DATA_API_KEY is not set. Copy .env.example to .env and add your "
+        "football-data.org key (free tier: https://www.football-data.org/client/register)."
+    )
 HEADERS = {'X-Auth-Token': API_KEY}
 
 def save_matches_to_csv(league_code="PL"):

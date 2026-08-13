@@ -11,7 +11,12 @@ sys.path.append(os.path.join(ROOT_DIR, "src", "models"))
 from fusion_model import MultimodalSportsModel
 
 load_dotenv()
-API_KEY = os.getenv("FOOTBALL_DATA_API_KEY", "5fdadf02cbbb4060a089cee644997086")
+API_KEY = os.getenv("FOOTBALL_DATA_API_KEY")
+if not API_KEY:
+    raise SystemExit(
+        "FOOTBALL_DATA_API_KEY is not set. Copy .env.example to .env and add your "
+        "football-data.org key (free tier: https://www.football-data.org/client/register)."
+    )
 
 def custom_predict_match(model, stats_seq_np, nlp_vec_tensor, device):
     model.eval()
