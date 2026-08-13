@@ -180,6 +180,16 @@ Fetch real match data (requires `FOOTBALL_DATA_API_KEY`):
 python src/stats/fetch_data.py
 ```
 
+Tests (no torch or downloads required — `pip install -r requirements-test.txt`):
+
+```bash
+pytest tests/
+```
+
+They cover the Kelly staking maths against its closed form, value-bet detection,
+de-vigging, and — importantly — that feature construction cannot see the current or any
+future match. A look-ahead bug is silent and flatters results, so it is asserted directly.
+
 Interactive checks:
 
 ```bash
@@ -220,6 +230,9 @@ src/
     fetch_data.py              football-data.org ingestion
     preprocessing.py           feature assembly
     merge_sources.py           joins statistical and text sources
+tests/
+  test_backtesting.py          Kelly staking, value detection, settlement, metrics
+  test_features.py             de-vigging + look-ahead guarantees
 predict.py                     single-match inference
 test.py                        interactive pipeline checks
 ```
