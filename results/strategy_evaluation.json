@@ -1,0 +1,136 @@
+{
+  "test_season": 2024,
+  "n_matches": 504,
+  "bookmaker_overround_pct": 5.439438717287313,
+  "model": {
+    "log_loss": 0.9722781137463082,
+    "accuracy": 0.5416666666666666
+  },
+  "bookmaker_devigged": {
+    "log_loss": 0.9427145257939742,
+    "accuracy": 0.5595238095238095
+  },
+  "uniform_log_loss": 1.0986122886681098,
+  "betting_grid": [
+    {
+      "kelly_fraction": 0.05,
+      "min_edge": 0.0,
+      "n_bets": 389,
+      "roi_pct": -42.702125274687155,
+      "yield_pct": -24.8198069985381,
+      "win_rate_pct": 32.390745501285345,
+      "max_drawdown_pct": 42.702125274687155,
+      "final_bankroll": 572.9787472531284
+    },
+    {
+      "kelly_fraction": 0.05,
+      "min_edge": 0.05,
+      "n_bets": 361,
+      "roi_pct": -43.05862983295041,
+      "yield_pct": -26.062102948310624,
+      "win_rate_pct": 29.916897506925206,
+      "max_drawdown_pct": 43.05862983295041,
+      "final_bankroll": 569.4137016704959
+    },
+    {
+      "kelly_fraction": 0.05,
+      "min_edge": 0.1,
+      "n_bets": 299,
+      "roi_pct": -43.80191264954295,
+      "yield_pct": -31.2528218044067,
+      "win_rate_pct": 25.08361204013378,
+      "max_drawdown_pct": 43.80191264954295,
+      "final_bankroll": 561.9808735045705
+    },
+    {
+      "kelly_fraction": 0.05,
+      "min_edge": 0.2,
+      "n_bets": 194,
+      "roi_pct": -44.0498472019735,
+      "yield_pct": -41.9242173222759,
+      "win_rate_pct": 17.525773195876287,
+      "max_drawdown_pct": 44.0498472019735,
+      "final_bankroll": 559.501527980265
+    },
+    {
+      "kelly_fraction": 0.1,
+      "min_edge": 0.0,
+      "n_bets": 417,
+      "roi_pct": -67.59904137694298,
+      "yield_pct": -26.43921203482079,
+      "win_rate_pct": 33.573141486810556,
+      "max_drawdown_pct": 67.59904137694298,
+      "final_bankroll": 324.0095862305702
+    },
+    {
+      "kelly_fraction": 0.1,
+      "min_edge": 0.05,
+      "n_bets": 377,
+      "roi_pct": -68.96272166291097,
+      "yield_pct": -28.640104343659896,
+      "win_rate_pct": 29.44297082228117,
+      "max_drawdown_pct": 68.96272166291097,
+      "final_bankroll": 310.37278337089043
+    },
+    {
+      "kelly_fraction": 0.1,
+      "min_edge": 0.1,
+      "n_bets": 306,
+      "roi_pct": -69.87569555867222,
+      "yield_pct": -34.89205803778589,
+      "win_rate_pct": 24.509803921568626,
+      "max_drawdown_pct": 69.87569555867222,
+      "final_bankroll": 301.24304441327786
+    },
+    {
+      "kelly_fraction": 0.1,
+      "min_edge": 0.2,
+      "n_bets": 196,
+      "roi_pct": -69.59317174304573,
+      "yield_pct": -45.267452133179184,
+      "win_rate_pct": 17.346938775510203,
+      "max_drawdown_pct": 69.59317174304573,
+      "final_bankroll": 304.0682825695427
+    },
+    {
+      "kelly_fraction": 0.25,
+      "min_edge": 0.0,
+      "n_bets": 379,
+      "roi_pct": -94.5022486112884,
+      "yield_pct": -33.233021958569815,
+      "win_rate_pct": 33.24538258575198,
+      "max_drawdown_pct": 94.5022486112884,
+      "final_bankroll": 54.977513887116025
+    },
+    {
+      "kelly_fraction": 0.25,
+      "min_edge": 0.05,
+      "n_bets": 335,
+      "roi_pct": -95.5465964353726,
+      "yield_pct": -36.40350249085002,
+      "win_rate_pct": 29.253731343283583,
+      "max_drawdown_pct": 95.5465964353726,
+      "final_bankroll": 44.53403564627404
+    },
+    {
+      "kelly_fraction": 0.25,
+      "min_edge": 0.1,
+      "n_bets": 278,
+      "roi_pct": -95.69230700863484,
+      "yield_pct": -45.28881384197658,
+      "win_rate_pct": 24.46043165467626,
+      "max_drawdown_pct": 95.69230700863484,
+      "final_bankroll": 43.07692991365164
+    },
+    {
+      "kelly_fraction": 0.25,
+      "min_edge": 0.2,
+      "n_bets": 191,
+      "roi_pct": -95.28612978429803,
+      "yield_pct": -54.8699145622252,
+      "win_rate_pct": 17.277486910994764,
+      "max_drawdown_pct": 95.28612978429803,
+      "final_bankroll": 47.13870215701978
+    }
+  ]
+}

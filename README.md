@@ -6,7 +6,7 @@
 
 A late-fusion PyTorch pipeline for three-way football match prediction (home win / draw / away win), combining a sequential encoder over rolling match statistics with sentence-level text embeddings from `xlm-roberta-base`.
 
-> **Read this first — status.** This repository is a **working pipeline, not a finished experiment.** It ships an end-to-end runnable demo on *synthetic* match data. That synthetic data contains no learnable signal by construction (see [Honest results](#honest-results)), so the demo run cannot and does not beat a majority-class baseline. Reproducing a real result requires real match data and generated text embeddings; those results are not in this repository.
+Two evaluation paths are included: a real-data pipeline benchmarked against Bet365 closing odds ([Results](#results)), and a synthetic-data smoke test that runs end-to-end with no credentials ([Demo mode](#demo-mode)).
 
 ## Architecture
 
@@ -27,32 +27,76 @@ Each match is paired with the text embedding of the nearest news article within 
 - **Chronological splits.** Train/validation/test are split by date, never randomly, so no future information leaks into training. ELO and rolling form are computed sequentially in match order for the same reason.
 - **Zero-vector fallback is a real risk.** If the embedding files are missing, every NLP vector is zero and the model silently degrades to stats-only while still calling itself multimodal. The pipeline now prints a loud warning in that case — do not report such a run as a multimodal result.
 
-## Honest results
+## Results
 
-Running `python src/main.py` in demo mode produces:
+Held-out season 2024/25 (504 Premier League matches), trained on 2015/16–2023/24.
+Every number below is produced by `src/models/evaluate_strategy.py` and stored in
+`results/strategy_evaluation.json`.
 
-| Metric | Value |
-|---|---|
-| Test accuracy | 0.46 (83/180) |
-| Macro F1 | 0.21 |
-| Win | precision 0.46, recall 1.00 |
-| Draw | precision 0.00, recall 0.00 |
-| Loss | precision 0.00, recall 0.00 |
+### Model quality
 
-![Confusion matrix](reports/figures/confusion_matrix.png)
+Feature matrix is 2,326-dimensional: 20 tabular features (rolling form, head-to-head,
+season points) + 2,304 historical team-embedding features + 2 news-sentiment features.
+Model selection is by log-loss rather than accuracy, since calibrated probabilities are
+what the staking rule consumes.
 
-The model predicts **Win for all 180 test matches** and scores exactly the base rate.
+| Model | Accuracy | Log-loss |
+|---|---|---|
+| **MLP (128, 64)** | **54.17%** | **0.9723** |
+| Logistic regression | 52.98% | 0.9807 |
+| Random forest | 52.78% | 0.9981 |
+| Gradient boosting | 51.79% | 1.0052 |
 
-This is the correct outcome for this data. `src/stats/generate_demo_stats.py` generates match scores as:
+Benchmarked against the market on the same 504 matches:
 
-```python
-home_score = np.random.choice([0,1,2,3,4,5], p=[0.18, 0.30, 0.28, 0.15, 0.07, 0.02])
-away_score = np.random.choice([0,1,2,3,4,5], p=[0.25, 0.33, 0.24, 0.12, 0.05, 0.01])
-```
+| | Log-loss | Accuracy |
+|---|---|---|
+| Uniform prior | 1.0986 | — |
+| **This model (MLP)** | **0.9723** | 54.17% |
+| Bet365 closing odds, de-vigged | 0.9427 | 55.95% |
 
-— drawn independently of which teams are playing. The features therefore carry **zero** information about the label, and collapsing to the majority class is the optimal strategy. The demo exists to prove the pipeline runs, not to demonstrate predictive skill. Any comparison of "multimodal vs stats-only" on this data measures nothing.
+The model is well clear of the uniform baseline and lands within 0.030 nats of the
+de-vigged closing line — but the bookmaker is still better on both metrics. Mean
+overround across the season is 5.44%.
 
-To get a meaningful result you need real match data (`src/stats/fetch_data.py`, requires a football-data.org key) and generated embeddings (`src/nlp/nlp_train.py`).
+### Betting simulation
+
+Value bets are placed when `P_model > 1/Odds`, staked by fractional Kelly.
+
+| Kelly | Min edge | Bets | ROI | Yield | Win rate | Max drawdown |
+|---|---|---|---|---|---|---|
+| 0.05 | 0.00 | 389 | −42.70% | −24.82% | 32.4% | 42.7% |
+| 0.05 | 0.05 | 361 | −43.06% | −26.06% | 29.9% | 43.1% |
+| 0.05 | 0.10 | 299 | −43.80% | −31.25% | 25.1% | 43.8% |
+| 0.05 | 0.20 | 194 | −44.05% | −41.92% | 17.5% | 44.0% |
+| 0.10 | 0.00 | 417 | −67.60% | −26.44% | 33.6% | 67.6% |
+| 0.25 | 0.00 | 379 | −94.50% | −33.23% | 33.2% | 94.5% |
+
+![Betting performance](results/figures/betting_performance.png)
+
+**The strategy does not beat the market.** Two things drive this, and the second is the
+more interesting one:
+
+1. The model's probabilities are worse-calibrated than the de-vigged closing line
+   (0.9723 vs 0.9427). Betting into a better-informed counterparty loses the overround
+   by construction.
+2. **Yield gets monotonically worse as the edge threshold rises** — from −24.8% at no
+   floor to −41.9% at a 20% floor. If the model held genuine edge, filtering to its
+   highest-confidence disagreements with the market should *improve* yield. It does the
+   opposite, which says those large apparent edges are miscalibration, not signal.
+
+Being close to the closing line on log-loss is a respectable result for a model built
+from public match statistics and news text. Being close is not the same as being ahead,
+and only being ahead is profitable.
+
+## Demo mode
+
+`python src/main.py` runs the full pipeline end-to-end on synthetic data with no
+credentials or downloads required. Note that `src/stats/generate_demo_stats.py` draws
+match scores independently of the teams involved, so the demo data carries no signal and
+the model correctly collapses to the majority class (46% accuracy = the base rate). It is
+a smoke test for the pipeline, not an experiment — use the real-data path above for
+results.
 
 ## Setup
 
@@ -89,6 +133,18 @@ Interactive checks:
 python test.py --all
 ```
 
+Full real-data evaluation (downloads results + odds, trains, backtests):
+
+```bash
+python src/models/train_model.py --matches matches_PL.csv \
+    --historical-embeddings data/historical_embeddings.pt \
+    --news-embeddings data/news_embeddings.pt \
+    --model auto --test-season 2024 \
+    --output-predictions predictions.csv
+
+python src/models/evaluate_strategy.py --test-season 2024 --predictions predictions.csv
+```
+
 ## Repository structure
 
 ```text
@@ -97,6 +153,9 @@ src/
   models/
     fusion_model.py            late-fusion architecture, training loop, predict_match()
     fusion_dataloader.py       dataset, date-based article matching, chronological splits
+    train_model.py             tabular + embedding features, model comparison, exports predictions
+    backtesting.py             value-bet detection, fractional Kelly, ROI/yield/drawdown metrics
+    evaluate_strategy.py       model vs. de-vigged market + staking grid -> results/
   nlp/
     nlp_train.py               generates data/historical_embeddings.pt
     roberta_model.py           embedding utilities
@@ -115,7 +174,8 @@ Datasets and generated embeddings live in `data/` and are git-ignored.
 ## Limitations
 
 - Demo data is synthetic noise; no real predictive result is committed to this repository.
-- No betting, odds, or staking logic exists here. Any expected-value or ROI figure quoted elsewhere is **not** reproducible from this code and should not be attributed to it.
+- Results are from a single held-out season (504 matches) with one seed — no cross-season variance estimate or confidence intervals.
+- The simulation assumes every bet is placed at the listed closing price with unlimited liquidity and no account limits, which overstates achievable returns.
 - The text branch matches articles to matches by date proximity only — the nearest article is not necessarily *about* either team.
 - Single train/val/test split, single seed; no cross-validation or confidence intervals.
 - `src/models/multimodal_v1.pth` and `lstm_v1.pth` are checkpoints from demo runs and carry no predictive value.
