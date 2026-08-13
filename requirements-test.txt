@@ -1,3 +1,4 @@
+# Requires Python >= 3.12 (numpy/scipy/jax pins).
 # tests/ exercises the staking maths and feature construction; no torch needed.
 pandas==3.0.5
 numpy==2.5.2
