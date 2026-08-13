@@ -25,7 +25,7 @@ Each match is paired with the text embedding of the nearest news article within 
 ## Methodology notes
 
 - **Chronological splits.** Train/validation/test are split by date, never randomly, so no future information leaks into training. ELO and rolling form are computed sequentially in match order for the same reason.
-- **Zero-vector fallback is a real risk.** If the embedding files are missing, every NLP vector is zero and the model silently degrades to stats-only while still calling itself multimodal. The pipeline now prints a loud warning in that case — do not report such a run as a multimodal result.
+- **Zero-vector fallback is a real risk.** If the embedding files are missing, every NLP vector is zero and the model silently degrades to stats-only while still calling itself multimodal. The pipeline now prints a loud warning in that case, do not report such a run as a multimodal result.
 
 ## Results
 
@@ -51,12 +51,12 @@ Benchmarked against the market on the same 504 matches:
 
 | | Log-loss | Accuracy |
 |---|---|---|
-| Uniform prior | 1.0986 | — |
+| Uniform prior | 1.0986 | n/a |
 | **This model (MLP)** | **0.9723** | 54.17% |
 | Bet365 closing odds, de-vigged | 0.9427 | 55.95% |
 
 The model is well clear of the uniform baseline and lands within 0.030 nats of the
-de-vigged closing line — but the bookmaker is still better on both metrics. Mean
+de-vigged closing line, but the bookmaker is still better on both metrics. Mean
 overround across the season is 5.44%.
 
 ### Betting simulation
@@ -80,7 +80,7 @@ more interesting one:
 1. The model's probabilities are worse-calibrated than the de-vigged closing line
    (0.9723 vs 0.9427). Betting into a better-informed counterparty loses the overround
    by construction.
-2. **Yield gets monotonically worse as the edge threshold rises** — from −24.8% at no
+2. **Yield gets monotonically worse as the edge threshold rises**, from −24.8% at no
    floor to −41.9% at a 20% floor. If the model held genuine edge, filtering to its
    highest-confidence disagreements with the market should *improve* yield. It does the
    opposite, which says those large apparent edges are miscalibration, not signal.
@@ -93,7 +93,7 @@ and only being ahead is profitable.
 
 The baseline above trains on one league. `src/models/model_v2.py` scales it to **14 European
 leagues and 37,514 matches**, replaces goals-only features with shot-based venue-split rolling
-windows (shots, shots on target, corners, rest days), and — critically — supplies the de-vigged
+windows (shots, shots on target, corners, rest days), and, critically, supplies the de-vigged
 opening price as an input feature.
 
 That last choice makes the test decisive: a model handed the market's own probabilities starts
@@ -105,7 +105,7 @@ from everything the price knows, so any improvement must be information the mark
 | 1X2 | test 2024/25 | 1.0016 | 1.0006 | +0.0010 |
 | Over/Under 2.5 | test 2024/25 | 0.6756 | 0.6756 | −0.00004 |
 
-The gap to the closing line narrowed from **+0.0296** in the baseline to **+0.0010** — parity —
+The gap to the closing line narrowed from **+0.0296** in the baseline to **+0.0010**, parity,
 but never turned negative. Given the price plus 22 additional features and 26,674 training
 matches, the model converges to reproducing the market and loses a little to estimation error.
 The Over/Under market behaves identically.
@@ -122,7 +122,7 @@ Decomposed on the 5,429-match test set (flat stakes, overround 6.30%):
 | Model, highest probability | −5.70% | 50.3% |
 | Model, highest EV | −4.34% | 31.8% |
 
-The model beats random by ~1.8 points, so it has genuine skill — just not the 6.3 points needed
+The model beats random by ~1.8 points, so it has genuine skill, just not the 6.3 points needed
 to clear the overround. The larger problem is *which* bets the EV rule selects:
 
 | Odds bucket | n | EV claimed | Actual yield | Hit rate |
@@ -148,7 +148,7 @@ near even money leave no room for the amplification effect.
 credentials or downloads required. Note that `src/stats/generate_demo_stats.py` draws
 match scores independently of the teams involved, so the demo data carries no signal and
 the model correctly collapses to the majority class (46% accuracy = the base rate). It is
-a smoke test for the pipeline, not an experiment — use the real-data path above for
+a smoke test for the pipeline, not an experiment. Use the real-data path above for
 results.
 
 ## Setup
@@ -162,7 +162,7 @@ A free key is available at [football-data.org](https://www.football-data.org/cli
 
 ## Running
 
-Demo pipeline, no credentials or downloads required — synthetic data, end to end:
+Demo pipeline, no credentials or downloads required, synthetic data, end to end:
 
 ```bash
 python src/main.py
@@ -180,14 +180,14 @@ Fetch real match data (requires `FOOTBALL_DATA_API_KEY`):
 python src/stats/fetch_data.py
 ```
 
-Tests (no torch or downloads required — `pip install -r requirements-test.txt`):
+Tests (no torch or downloads required, `pip install -r requirements-test.txt`):
 
 ```bash
 pytest tests/
 ```
 
 They cover the Kelly staking maths against its closed form, value-bet detection,
-de-vigging, and — importantly — that feature construction cannot see the current or any
+de-vigging, and, importantly, that feature construction cannot see the current or any
 future match. A look-ahead bug is silent and flatters results, so it is asserted directly.
 
 Interactive checks:
@@ -242,12 +242,12 @@ Datasets and generated embeddings live in `data/` and are git-ignored.
 ## Limitations
 
 - Demo data is synthetic noise; no real predictive result is committed to this repository.
-- Results are from a single held-out season (504 matches) with one seed — no cross-season variance estimate or confidence intervals.
+- Results are from a single held-out season (504 matches) with one seed, so no cross-season variance estimate or confidence intervals.
 - The simulation assumes every bet is placed at the listed closing price with unlimited liquidity and no account limits, which overstates achievable returns.
-- The text branch matches articles to matches by date proximity only — the nearest article is not necessarily *about* either team.
+- The text branch matches articles to matches by date proximity only, so the nearest article is not necessarily *about* either team.
 - Single train/val/test split, single seed; no cross-validation or confidence intervals.
 - `src/models/multimodal_v1.pth` and `lstm_v1.pth` are checkpoints from demo runs and carry no predictive value.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT, see [LICENSE](LICENSE).

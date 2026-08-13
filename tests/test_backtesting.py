@@ -1,9 +1,4 @@
-"""Unit tests for the staking and value-detection maths.
-
-These are the functions that decide how much money is risked, so they are the
-ones worth pinning down. Everything here is a closed-form check against the
-Kelly criterion rather than a regression snapshot.
-"""
+"""Tests for the staking and value-bet logic."""
 import os
 import sys
 
@@ -17,7 +12,7 @@ from backtesting import Bettor, generate_demo_data  # noqa: E402
 # ── value detection ──────────────────────────────────────────────────────────
 
 def test_edge_formula_matches_definition():
-    """edge = p*odds - 1, and a fair bet has zero edge."""
+    """edge = p*odds - 1"""
     b = Bettor(min_edge=0.0)
     is_value, edge = b.is_value_bet(0.50, 2.00)      # exactly fair
     assert edge == pytest.approx(0.0)
@@ -45,7 +40,7 @@ def test_no_value_when_below_implied_probability():
 # ── Kelly staking ────────────────────────────────────────────────────────────
 
 def test_kelly_matches_closed_form():
-    """f* = (b*p - q)/b, scaled by the Kelly fraction and the bankroll."""
+    """f* = (b*p - q)/b, scaled by kelly_fraction and bankroll"""
     b = Bettor(initial_bankroll=1000.0, kelly_fraction=1.0, max_bet_pct=1.0)
     p, odd = 0.60, 2.00
     expected_f = (1.0 * 0.60 - 0.40) / 1.0           # = 0.20
@@ -59,7 +54,7 @@ def test_kelly_fraction_scales_linearly():
 
 
 def test_no_stake_when_kelly_is_negative():
-    """A bet with no edge must never be sized."""
+    """no edge, no stake"""
     b = Bettor(1000.0, kelly_fraction=1.0)
     assert b.kelly_stake(0.40, 2.00) == 0.0          # negative Kelly
     assert b.kelly_stake(0.50, 2.00) == 0.0          # exactly zero Kelly
@@ -79,11 +74,7 @@ def test_stake_scales_with_current_bankroll():
 
 
 def test_longshot_amplification_is_real():
-    """A fixed absolute error in p implies a much larger edge at long odds.
-
-    This is the mechanism behind the README's odds-bucket table: selecting on
-    maximum edge preferentially selects the model's most inflated estimates.
-    """
+    """Same absolute error in p looks like a much bigger edge at long odds."""
     b = Bettor(min_edge=0.0)
     _, edge_long = b.is_value_bet(0.08, 15.0)        # true 0.05, 3pt overestimate
     _, edge_short = b.is_value_bet(0.68, 1.5)        # true 0.65, same 3pt error

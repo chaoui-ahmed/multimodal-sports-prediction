@@ -1,8 +1,8 @@
-"""Tests for feature construction and market handling.
+"""Tests for feature building and odds handling.
 
-The load-bearing property here is that no feature may use information from the
-match it describes, or from any later match. A look-ahead bug is silent — it
-just makes results look good — so it is worth testing directly.
+Main thing checked here: no feature can see the match it describes or any
+later one. Look-ahead bugs are silent and make results look better than they
+are, so they get tested rather than assumed.
 """
 import os
 import sys
@@ -16,7 +16,7 @@ from model_v2 import build, devig  # noqa: E402
 
 
 def _synthetic(n=60):
-    """Alternating fixtures with a deliberate blowout in the final match."""
+    """Fake fixtures, with a blowout in the last match so it stands out."""
     teams = ["A", "B", "C", "D"]
     rows = []
     for i in range(n):
@@ -50,7 +50,7 @@ def test_devig_preserves_ordering():
 
 
 def test_features_do_not_use_the_current_match():
-    """Changing only the LAST match's score must not change its own features."""
+    """Changing the last match's score must not change its own features."""
     df = _synthetic()
     base = build(df.copy())
 
@@ -69,7 +69,7 @@ def test_features_do_not_use_the_current_match():
 
 
 def test_features_do_not_use_future_matches():
-    """Truncating the data must not change features of the matches that remain."""
+    """Cutting off later matches must not change the earlier ones."""
     df = _synthetic()
     full = build(df.copy())
     part = build(df.iloc[:-5].copy())
@@ -84,7 +84,7 @@ def test_features_do_not_use_future_matches():
 
 
 def test_warmup_rows_are_dropped():
-    """Teams need history before they get features; those rows must not survive."""
+    """Teams need history first, so early rows get dropped."""
     out = build(_synthetic(20))
     assert len(out) < 20
     assert out["usable"].all()
