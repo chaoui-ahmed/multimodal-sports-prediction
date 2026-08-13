@@ -132,5 +132,47 @@
       "max_drawdown_pct": 95.28612978429803,
       "final_bankroll": 47.13870215701978
     }
-  ]
+  ],
+  "closing_line_value": {
+    "description": "CLV = opening_odds/closing_odds - 1. Positive means a better price than the market settled at. Random-selection control isolates the model's contribution.",
+    "premier_league_2024_25": {
+      "model_clv_vs_pinnacle_pct": -3.52,
+      "random_control_pct": -3.46,
+      "net_vs_control_pct": -0.06,
+      "n": 504,
+      "note": "Model selections statistically indistinguishable from random."
+    },
+    "serie_b": {
+      "held_out_2023_24": {
+        "model_clv_pct": 1.12,
+        "p_value": 0.02,
+        "random_control_pct": 0.43,
+        "net_pct": 0.7,
+        "n": 358
+      },
+      "held_out_2024_25": {
+        "model_clv_pct": 1.48,
+        "p_value": 0.001,
+        "random_control_pct": 0.18,
+        "net_pct": 1.3,
+        "n": 363
+      },
+      "note": "Replicated above control in two independent seasons, but does not convert to profit."
+    },
+    "serie_b_roi_by_price_tier": {
+      "bet365_overround_5.5_6.4pct": {
+        "2023_24": -9.1,
+        "2024_25": -24.18
+      },
+      "market_average_overround_6.5_6.8pct": {
+        "2023_24": -12.84,
+        "2024_25": -25.85
+      },
+      "best_available_overround_1.7_2.2pct": {
+        "2023_24": -15.68,
+        "2024_25": -22.39
+      }
+    },
+    "conclusion": "Small positive CLV in Serie B does not survive as profit at any price tier. Selections skew to longshots, where post-opening price drift produces CLV mechanically while favourite-longshot bias keeps expected return negative."
+  }
 }
